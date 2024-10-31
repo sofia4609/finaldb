@@ -5,7 +5,6 @@ from typing import List
 
 router = APIRouter()
 
-# Rutas para áreas
 @router.post("/areas/", response_model=Area, tags=["Áreas"])
 def create_area(area: AreaCreate):
     conn = get_db_connection()
@@ -67,7 +66,6 @@ def list_areas():
         cursor.close()
         conn.close()
 
-# Rutas para empleados
 @router.post("/empleados/", response_model=Employee, tags=["Empleados"])
 def create_employee(employee: EmployeeCreate):
     conn = get_db_connection()
@@ -104,7 +102,6 @@ def create_employees_bulk(employees: List[EmployeeCreate]):
         cursor.executemany(query, values)
         conn.commit()
         
-        # Obtener los IDs de los empleados insertados
         cursor.execute("SELECT LAST_INSERT_ID()")
         last_id = cursor.fetchone()[0]
 
@@ -132,7 +129,6 @@ def list_employees():
         cursor.close()
         conn.close()
 
-# Rutas para horarios
 @router.post("/horarios/", response_model=Horario, tags=["Horarios"])
 def create_horario(horario: HorarioCreate):
     conn = get_db_connection()
@@ -196,7 +192,6 @@ def list_horarios():
         cursor.close()
         conn.close()
 
-# Rutas para trenes
 @router.post("/trenes/", response_model=Tren, tags=["Trenes"])
 def create_tren(tren: TrenCreate):
     conn = get_db_connection()
@@ -260,7 +255,6 @@ def list_trenes():
         cursor.close()
         conn.close()
 
-# Rutas para rutas
 @router.post("/rutas/", response_model=Ruta, tags=["Rutas"])
 def create_ruta(ruta: RutaCreate):
     conn = get_db_connection()
@@ -324,8 +318,6 @@ def list_rutas():
         cursor.close()
         conn.close()
 
-
-# Rutas para asignaciones
 @router.post("/asignaciones/", response_model=Asignacion, tags=["Asignaciones"])
 def create_asignacion(asignacion: AsignacionCreate):
     conn = get_db_connection()
@@ -474,7 +466,6 @@ def get_asignacion_by_id(asignacion_id: int):
         cursor.close()
         conn.close()
 
-#
 @router.get("/Query6/", tags=["Empleados por área con conteo"])
 def get_employees_by_area():
     conn = get_db_connection()
