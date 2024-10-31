@@ -3,7 +3,7 @@ venv/
 env/
 .venv/
 Schemasql.sql
-
+data.json
 # Archivos de Python
 __pycache__/
 *.py[cod]

@@ -388,3 +388,302 @@ def list_asignaciones():
     finally:
         cursor.close()
         conn.close()
+
+@router.get("/Query1/", tags=["Obtener todas las areas registradas"])
+def get_all_areas():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = "SELECT * FROM areas"
+        cursor.execute(query)
+        areas = cursor.fetchall()
+        return [Area(**area) for area in areas]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Query2/", tags=["Buscar empleado por id de empleado"])
+def get_employee_by_id(codigo_empleado: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = "SELECT * FROM empleados WHERE codigo_empleado = %s"
+        cursor.execute(query, (codigo_empleado,))
+        employee = cursor.fetchone()
+        if employee:
+            return Employee(**employee)
+        else:
+            raise HTTPException(status_code=404, detail="Empleado no encontrado")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@router.get("/Query3/", tags=["Buscar tren por id"])
+def get_train_by_id(tren_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = "SELECT * FROM trenes WHERE tren_id = %s"
+        cursor.execute(query, (tren_id,))
+        train = cursor.fetchone()
+        if train:
+            return Tren(**train)
+        else:
+            raise HTTPException(status_code=404, detail="Tren no encontrado")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Query4/", tags=["Rutas pasadas"])
+def get_all_rutas():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = "SELECT * FROM rutas"
+        cursor.execute(query)
+        rutas = cursor.fetchall()
+        return [Ruta(**ruta) for ruta in rutas]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Query5/", tags=["Buscar asignaciones especificas por id"])
+def get_asignacion_by_id(asignacion_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = "SELECT * FROM asignaciones WHERE asignacion_id = %s"
+        cursor.execute(query, (asignacion_id,))
+        asignacion = cursor.fetchone()
+        if asignacion:
+            return Asignacion(**asignacion)
+        else:
+            raise HTTPException(status_code=404, detail="Asignación no encontrada")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+#
+@router.get("/Query6/", tags=["Empleados por área con conteo"])
+def get_employees_by_area():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT a.nombre_area, COUNT(e.codigo_empleado) as total_empleados
+        FROM areas a
+        LEFT JOIN empleados e ON a.area_id = e.area_id
+        GROUP BY a.area_id, a.nombre_area
+        """
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Query7/", tags=["Trenes con más asignaciones"])
+def get_trenes_mas_usados():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT t.nombre_tren, t.capacidad, COUNT(a.asignacion_id) as total_asignaciones
+        FROM trenes t
+        LEFT JOIN asignaciones a ON t.tren_id = a.tren_id
+        GROUP BY t.tren_id, t.nombre_tren, t.capacidad
+        ORDER BY total_asignaciones DESC
+        """
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Query8/", tags=["Empleados con sus horarios"])
+def get_employee_schedules(codigo_empleado: int = None):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT e.nombre, e.apellido, h.hora_entrada, h.hora_salida
+        FROM empleados e
+        INNER JOIN asignaciones a ON e.codigo_empleado = a.codigo_empleado
+        INNER JOIN horarios h ON a.horario_id = h.horario_id
+        """
+        if codigo_empleado:
+            query += " WHERE e.codigo_empleado = %s"
+            cursor.execute(query, (codigo_empleado,))
+        else:
+            cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+        
+@router.get("/Query9/", tags=["Promedio de capacidad de trenes por ruta"])
+def get_avg_train_capacity_by_route():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT r.origen, r.destino, AVG(t.capacidad) as capacidad_promedio
+        FROM rutas r
+        RIGHT JOIN trenes t ON r.tren_id = t.tren_id
+        GROUP BY r.origen, r.destino
+        """
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Query10/", tags=["Horarios más utilizados"])
+def get_most_used_schedules():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT h.*, COUNT(a.asignacion_id) as total_asignaciones
+        FROM horarios h
+        LEFT JOIN asignaciones a ON h.horario_id = a.horario_id
+        GROUP BY h.horario_id
+        ORDER BY total_asignaciones DESC
+        LIMIT 5
+        """
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+        
+@router.get("/Query11/", tags=["Empleados por tren"])
+def get_employees_by_train(tren_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT t.nombre_tren, e.nombre, e.apellido, h.hora_entrada, h.hora_salida
+        FROM trenes t
+        INNER JOIN asignaciones a ON t.tren_id = a.tren_id
+        INNER JOIN empleados e ON a.codigo_empleado = e.codigo_empleado
+        INNER JOIN horarios h ON a.horario_id = h.horario_id
+        WHERE t.tren_id = %s
+        """
+        cursor.execute(query, (tren_id,))
+        return cursor.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+        
+
+
+@router.get("/Query12/", tags=["Rutas con más trenes asignados"])
+def get_routes_with_most_trains():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT 
+            r.origen,
+            r.destino,
+            COUNT(DISTINCT t.tren_id) as total_trenes,
+            MAX(t.capacidad) as maxima_capacidad,
+            MIN(t.capacidad) as minima_capacidad
+        FROM rutas r
+        LEFT JOIN trenes t ON r.tren_id = t.tren_id
+        GROUP BY r.origen, r.destino
+        ORDER BY total_trenes DESC
+        """
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+        
+@router.get("/Query13   /", tags=["Empleados por cargo"])
+def get_employees_by_position():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT 
+            cargo,
+            COUNT(*) as total_empleados,
+            GROUP_CONCAT(CONCAT(nombre, ' ', apellido)) as lista_empleados
+        FROM empleados
+        GROUP BY cargo
+        ORDER BY total_empleados DESC
+        """
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Query14/", tags=["Trenes por capacidad"])
+def get_trains_by_capacity():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT 
+            nombre_tren,
+            capacidad
+        FROM trenes
+        ORDER BY capacidad DESC
+        """
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Query15/", tags=["Buscar rutas por origen"])
+def get_routes_by_origin(origen: str):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT 
+            origen,
+            destino
+        FROM rutas
+        WHERE origen LIKE %s
+        ORDER BY destino
+        """
+        cursor.execute(query, (f"%{origen}%",))
+        return cursor.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
