@@ -44,7 +44,7 @@ Create file *requirements.txt*
 
 ## Steps to create a new branch 
 ```bash
-    git checkout -b feature/"name of the branch"
+    git checkout -b feature/proyect-endpoint-query-15
 ```
 
 ## Steps to fetch changes from main branch
